@@ -69,8 +69,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-mod-
 
-      - name: Run tests
-        run: go test -v ./...
+      - name: Run tests with coverage
+        run: go test -v -coverprofile=coverage.out ./...
 
       - name: Upload coverage report
         if: success()
