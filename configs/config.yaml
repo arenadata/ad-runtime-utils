@@ -1,0 +1,58 @@
+default:
+  runtimes:
+    java:
+      version: "8"
+      env_var: JAVA_HOME
+
+    python:
+      version: "3.12"
+      env_var: VIRTUAL_ENV
+
+
+autodetect:
+  runtimes:
+    java:
+      "8":
+        override_path: /opt/java/jdk8-custom
+        env_var: JAVA8_HOME
+        paths:
+          - /usr/java/jdk1.8
+          - /usr/lib/jvm/java-1.8*
+
+      "24":
+        override_path: /opt/java/jdk24-custom
+        env_var: JAVA24_HOME
+        paths:
+          - /usr/lib/jvm/bellsoft-java24-amd64
+          - /usr/lib/jvm/jdk-24.0.2-oracle-x64
+          - /opt/java/temurin-24*
+
+    python:
+      "3.12":
+        override_path: ~/venvs/py3.9-custom
+        env_var: PY312_VENV
+        paths:
+          - /home/ashitov/temp/python/3.12/venv
+
+services:
+  myapp:
+    runtimes:
+      java:
+        version: "24"
+        override_path: /custom/myapp/jdk24
+        env_var: MYAPP_JAVA_HOME
+
+      python:
+        version: "3.12"
+        override_path: ~/projects/myapp/venv
+        env_var: MYAPP_PY_VENV
+
+  trino:
+    runtimes:
+      java:
+        version: "24"
+        env_var: TRINO_JAVA
+
+      python:
+        version: "3.12"
+        env_var: TRINO_KEK
