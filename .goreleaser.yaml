@@ -28,7 +28,6 @@ archives:
     files:
       - scripts/**
       - configs/**
-      - LICENSE
       - README.md
 
 changelog:
