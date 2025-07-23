@@ -28,7 +28,7 @@ archives:
     files:
       - scripts/**
       - configs/**
-      - README.md
+      - README.MD
 
 changelog:
   sort: asc
