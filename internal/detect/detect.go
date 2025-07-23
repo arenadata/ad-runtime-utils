@@ -29,7 +29,7 @@ func tryOverridePath(cfg config.RuntimeSetting, exe string) (string, bool) {
 		return "", false
 	}
 	p := expandPath(cfg.OverridePath)
-	if fs.ExistsInBin(p, exe) {
+	if _, err := os.Stat(filepath.Join(p, "bin", exe)); err == nil {
 		return p, true
 	}
 	return "", false
@@ -46,7 +46,8 @@ func tryEnvVar(cfg config.RuntimeSetting, exe string) (string, bool) {
 		return "", false
 	}
 	p := expandPath(raw)
-	if fs.ExistsInBin(p, exe) {
+
+	if _, err := os.Stat(filepath.Join(p, "bin", exe)); err == nil {
 		return p, true
 	}
 	return "", false
