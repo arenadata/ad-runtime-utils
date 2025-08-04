@@ -4,11 +4,6 @@ before:
   hooks:
     - go mod tidy
     - go generate ./...
-    - |
-      for dir in dist/*/*; do
-        ln -sf $(basename $dir)-v${GORELEASER_CURRENT_TAG} \
-               $dir/$(basename $dir)
-      done
 
 builds:
   - main: ./cmd/ad-runtime-utils
