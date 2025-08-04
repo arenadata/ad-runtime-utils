@@ -1,3 +1,9 @@
+## [v0.1.2] — 2025-08-04
+
+### Added
+- Support for per-service external config via `path:` key under `services.<name>`
+- Strict YAML validation (unknown fields are now rejected)
+  
 ## [v0.1.1] — 2025-07-23
 
 ### Added
