@@ -48,11 +48,5 @@ services:
         env_var: MYAPP_PY_VENV
 
   trino:
-    runtimes:
-      java:
-        version: "24"
-        env_var: TRINO_JAVA
+      path: /etc/trino/conf/trino-java.yaml
 
-      python:
-        version: "3.12"
-        env_var: TRINO_KEK

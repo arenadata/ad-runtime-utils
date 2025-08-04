@@ -62,3 +62,99 @@ func TestLoad_MissingFile(t *testing.T) {
 		t.Fatal("expected error loading non-existent file")
 	}
 }
+
+func TestLoad_ServiceExternal(t *testing.T) {
+	tmpDir := t.TempDir()
+	extContent := []byte(`
+services:
+  trino:
+    runtimes:
+      java:
+        version: "24"
+        env_var: TRINO_JAVA_HOME
+      python:
+        version: "3.12"
+        env_var: TRINO_PY_VENV
+`)
+	extFile := filepath.Join(tmpDir, "trino.yaml")
+	if err := os.WriteFile(extFile, extContent, 0o644); err != nil {
+		t.Fatalf("write external service config: %v", err)
+	}
+
+	mainContent := []byte(`
+default:
+  runtimes:
+    java:
+      version: "8"
+autodetect:
+  runtimes: {}
+services:
+  trino:
+    path: "` + extFile + `"
+`)
+	mainFile := filepath.Join(tmpDir, "config.yaml")
+	if err := os.WriteFile(mainFile, mainContent, 0o644); err != nil {
+		t.Fatalf("write main config: %v", err)
+	}
+
+	cfg, err := Load(mainFile)
+	if err != nil {
+		t.Fatalf("Load() failed: %v", err)
+	}
+
+	svcCfg, ok := cfg.Services["trino"]
+	if !ok {
+		t.Fatalf("service 'trino' not found")
+	}
+
+	java, ok := svcCfg.Runtimes["java"]
+	if !ok || java.Version != "24" || java.EnvVar != "TRINO_JAVA_HOME" {
+		t.Errorf("external java unexpected: %+v", java)
+	}
+	py, ok := svcCfg.Runtimes["python"]
+	if !ok || py.Version != "3.12" || py.EnvVar != "TRINO_PY_VENV" {
+		t.Errorf("external python unexpected: %+v", py)
+	}
+}
+
+func TestLoad_ServiceExternalMissing(t *testing.T) {
+	tmpDir := t.TempDir()
+	mainContent := []byte(`
+services:
+  foo:
+    path: "/no/such/file.yaml"
+`)
+	mainFile := filepath.Join(tmpDir, "cfg.yaml")
+	if err := os.WriteFile(mainFile, mainContent, 0o644); err != nil {
+		t.Fatalf("write main config: %v", err)
+	}
+
+	_, err := Load(mainFile)
+	if err == nil {
+		t.Fatal("expected error loading missing external service config")
+	}
+}
+
+func TestLoad_ServiceExternalParseError(t *testing.T) {
+	tmpDir := t.TempDir()
+	extFile := filepath.Join(tmpDir, "bad.yaml")
+	// пишем некорректный YAML
+	if err := os.WriteFile(extFile, []byte("::invalid::"), 0o644); err != nil {
+		t.Fatalf("write bad external config: %v", err)
+	}
+
+	mainContent := []byte(`
+services:
+  foo:
+    path: "` + extFile + `"
+`)
+	mainFile := filepath.Join(tmpDir, "cfg.yaml")
+	if err := os.WriteFile(mainFile, mainContent, 0o644); err != nil {
+		t.Fatalf("write main config: %v", err)
+	}
+
+	_, err := Load(mainFile)
+	if err == nil {
+		t.Fatal("expected error parsing external service config")
+	}
+}
