@@ -1,3 +1,17 @@
+## Why Is This Necessary?
+
+1. **Single Entry Point**  
+   Provides a unified interface for all utility functions (database checks, maintenance tasks, etc.).
+
+2. **One Binary**  
+   Replaces a bunch of shell scripts with a single executable, centralizing logic in one place.
+
+3. **Declarative Configuration**  
+   Uses a YAML‑based config to declare versions, paths, and overrides, making behavior transparent and easy to manage.
+
+4. **Service‑Ready & UI‑Friendly**  
+   Can run as a long‑running service and expose a consistent API for integration with web dashboards or other user interfaces.
+
 ## Runtime Detection Algorithm
 
 This section describes how ad-runtime-utils chooses the correct installation path for a given runtime (Java, Python, etc.), both when a service is specified and in the default (no-service) case.
