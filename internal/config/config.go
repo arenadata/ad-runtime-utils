@@ -32,39 +32,45 @@ type Config struct {
 }
 
 func Load(path string) (*Config, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("read config %q: %w", path, err)
+	data, readErr := os.ReadFile(path)
+	if readErr != nil {
+		return nil, fmt.Errorf("read config %q: %w", path, readErr)
 	}
 
 	var cfg Config
-	if err := yaml.UnmarshalWithOptions(data, &cfg, yaml.Strict()); err != nil {
-		return nil, fmt.Errorf("parse config %q: %w", path, err)
+	decodeErr := yaml.UnmarshalWithOptions(data, &cfg, yaml.Strict())
+	if decodeErr != nil {
+		return nil, fmt.Errorf("parse config %q: %w", path, decodeErr)
 	}
 
 	for name, svc := range cfg.Services {
-		if svc.Path != "" {
-			extData, err := os.ReadFile(svc.Path)
-			if err != nil {
-				return nil, fmt.Errorf("read service config %q: %w", svc.Path, err)
-			}
-
-			var extFull Config
-			if err := yaml.UnmarshalWithOptions(extData, &extFull, yaml.Strict()); err == nil {
-				if extSvc, ok := extFull.Services[name]; ok && len(extSvc.Runtimes) > 0 {
-					svc.Runtimes = extSvc.Runtimes
-					cfg.Services[name] = svc
-					continue
-				}
-			}
-
-			var ext ServiceConfig
-			if err := yaml.UnmarshalWithOptions(extData, &ext, yaml.Strict()); err != nil {
-				return nil, fmt.Errorf("parse service config %q: %w", svc.Path, err)
-			}
-			svc.Runtimes = ext.Runtimes
-			cfg.Services[name] = svc
+		if svc.Path == "" {
+			continue
 		}
+
+		extData, readExtErr := os.ReadFile(svc.Path)
+		if readExtErr != nil {
+			return nil, fmt.Errorf("read service config %q: %w", svc.Path, readExtErr)
+		}
+
+		var extCfg Config
+		fullCfgErr := yaml.UnmarshalWithOptions(extData, &extCfg, yaml.Strict())
+		if fullCfgErr == nil {
+			if extSvc, found := extCfg.Services[name]; found && len(extSvc.Runtimes) > 0 {
+				svc.Runtimes = extSvc.Runtimes
+				cfg.Services[name] = svc
+				continue
+			}
+		}
+
+		var ext ServiceConfig
+		fallbackErr := yaml.UnmarshalWithOptions(extData, &ext, yaml.Strict())
+		if fallbackErr != nil {
+			return nil, fmt.Errorf("parse service config %q: %w", svc.Path, fallbackErr)
+		}
+
+		svc.Runtimes = ext.Runtimes
+		cfg.Services[name] = svc
 	}
 
 	return &cfg, nil
