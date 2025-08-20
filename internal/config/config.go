@@ -50,6 +50,9 @@ func Load(path string) (*Config, error) {
 
 		extData, readExtErr := os.ReadFile(svc.Path)
 		if readExtErr != nil {
+			if os.IsNotExist(readExtErr) {
+				continue
+			}
 			return nil, fmt.Errorf("read service config %q: %w", svc.Path, readExtErr)
 		}
 
