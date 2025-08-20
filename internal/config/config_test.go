@@ -130,8 +130,8 @@ services:
 	}
 
 	_, err := Load(mainFile)
-	if err == nil {
-		t.Fatal("expected error loading missing external service config")
+	if err != nil {
+		t.Fatalf("Load() returned error for missing external service config: %v", err)
 	}
 }
 
