@@ -129,10 +129,10 @@ services:
 		t.Fatalf("write main config: %v", err)
 	}
 
-    _, err := Load(mainFile)
-    if err != nil {
-        t.Fatalf("Load() returned error for missing external service config: %v", err)
-    }
+	_, err := Load(mainFile)
+	if err != nil {
+		t.Fatalf("Load() returned error for missing external service config: %v", err)
+	}
 }
 
 func TestLoad_ServiceExternalParseError(t *testing.T) {
