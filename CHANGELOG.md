@@ -1,3 +1,8 @@
+## [v0.1.3] — 2025-08-21
+
+### Added
+- Skip missing external service configs instead of failing 
+
 ## [v0.1.2] — 2025-08-04
 
 ### Added
