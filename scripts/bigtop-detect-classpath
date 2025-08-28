@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+# Overriding this is not recommended because it has had to be hard-coded in
+# properties files for components that use bigtop-tomcat
+BIGTOP_CLASSPATH_DIR=/var/lib/bigtop
+
+# Create a string suitable for inclusion in CLASSPATH
+# for components that can use it in their environment
+for file in $BIGTOP_CLASSPATH_DIR/*.jar; do
+    if [ -z "$BIGTOP_CLASSPATH" ]; then
+        BIGTOP_CLASSPATH="$file"
+    else
+        BIGTOP_CLASSPATH="$BIGTOP_CLASSPATH:$file"
+    fi
+done
+export BIGTOP_CLASSPATH
