@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+# Override JAVA_NATIVE_PATH in the file below if you want to disable
+# automatic library detection
+
+# ensure that java has already been found
+if [ -z "$JAVA_HOME" ]; then
+  echo "JAVA_HOME must be set before calling bigtop-detect-javalibs"
+  exit 1
+fi
+
+# attempt to find native java libraries
+if [ -z "$JAVA_NATIVE_PATH" ]; then
+  for library in $JAVA_NATIVE_LIBS; do
+    if [ -z "$libraries_predicate" ]; then
+      libraries_predicate="-name $library"
+    else
+      libraries_predicate="$libraries_predicate -o -name $library"
+    fi
+  done
+  library_paths=`find -L ${JAVA_HOME} \( $libraries_predicate \) -exec dirname {} \; | sort -u`
+  for library_path in $library_paths; do
+    if [ -z "$JAVA_NATIVE_PATH" ]; then
+      export JAVA_NATIVE_PATH="$library_path"
+    else
+      export JAVA_NATIVE_PATH="$library_path:$JAVA_NATIVE_PATH"
+    fi
+  done
+  if [ -z "$JAVA_NATIVE_PATH" ]; then
+    echo "Unable to find native Java libraries in $JAVA_HOME"
+    exit 2
+  fi
+fi
+
