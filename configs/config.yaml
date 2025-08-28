@@ -4,49 +4,90 @@ default:
       version: "8"
       env_var: JAVA_HOME
 
-    python:
-      version: "3.12"
-      env_var: VIRTUAL_ENV
-
-
 autodetect:
   runtimes:
     java:
       "8":
-        override_path: /opt/java/jdk8-custom
         env_var: JAVA8_HOME
         paths:
           - /usr/java/jdk1.8
-          - /usr/lib/jvm/java-1.8*
+          - /usr/java/jre1.8
+          - /usr/lib/jvm/j2sdk1.8-oracle
+          - /usr/lib/jvm/j2sdk1.8-oracle/jre
+          - /usr/lib/jvm/java-8-oracle
+          - /usr/lib/jdk8-latest
+          - /usr/lib/jvm/java-1.8.0
+          - /usr/lib/jvm/java-1.8.0-oracle
+          - /usr/lib/jvm/bellsoft-java8-amd64
+          - /usr/lib/jvm/java-arenadata-openjdk-8
+
+      "17":
+        env_var: JAVA17_HOME
+        paths:
+          - /usr/lib/jvm/bellsoft-java17-amd64
+          - /usr/lib/jvm/bellsoft-java17
+          - /usr/lib/jvm/liberica-jdk-17*
+          - /usr/lib/jvm/liberica-jre-17*
+          - /usr/lib/jvm/zulu-17*
+          - /usr/lib/jvm/temurin-17*
+          - /usr/lib/jvm/adoptopenjdk-17*
+          - /usr/lib/jvm/jdk-17*
+          - /usr/lib/jvm/java-17*
+          - /usr/lib/jvm/openjdk-17*
+          - /usr/lib/jvm/openjdk-17*
+          - /opt/java/bellsoft-java17-amd64
+          - /opt/java/temurin-17*
+          - /usr/local/java/bellsoft-java17-amd64
+          - /usr/lib/jvm/java-arenadata-openjdk-17
+          - /usr/lib64/jvm/java-17*
+
+      "21":
+        env_var: JAVA21_HOME
+        paths:
+          - /usr/lib/jvm/java-21*
+          - /usr/lib/jvm/jdk-21*
+          - /usr/lib/jvm/java-arenadata-openjdk-21
+
+      "23":
+        env_var: JAVA23_HOME
+        paths:
+          - /usr/lib/jvm/bellsoft-java23-amd64
+          - /usr/lib/jvm/bellsoft-java23
+          - /usr/lib/jvm/liberica-jdk-23*
+          - /usr/lib/jvm/liberica-jre-23*
+          - /usr/lib/jvm/zulu-23*
+          - /usr/lib/jvm/temurin-23*
+          - /usr/lib/jvm/adoptopenjdk-23*
+          - /usr/lib/jvm/jdk-23*
+          - /usr/lib/jvm/java-23-openjdk
+          - /usr/lib/jvm/openjdk-23*
+          - /opt/java/bellsoft-java23-amd64
+          - /opt/java/temurin-23*
+          - /usr/local/java/bellsoft-java23-amd64
+          - /usr/lib/jvm/java-arenadata-openjdk-23
 
       "24":
-        override_path: /opt/java/jdk24-custom
         env_var: JAVA24_HOME
         paths:
           - /usr/lib/jvm/bellsoft-java24-amd64
-          - /usr/lib/jvm/jdk-24.0.2-oracle-x64
+          - /usr/lib/jvm/bellsoft-java24
+          - /usr/lib/jvm/liberica-jdk-24*
+          - /usr/lib/jvm/liberica-jre-24*
+          - /usr/lib/jvm/zulu-24*
+          - /usr/lib/jvm/temurin-24*
+          - /usr/lib/jvm/adoptopenjdk-24*
+          - /usr/lib/jvm/jdk-24*
+          - /usr/lib/jvm/java-24-openjdk
+          - /usr/lib/jvm/openjdk-24*
+          - /opt/java/bellsoft-java24-amd64
           - /opt/java/temurin-24*
-
-    python:
-      "3.12":
-        override_path: ~/venvs/py3.9-custom
-        env_var: PY312_VENV
-        paths:
-          - /home/ashitov/temp/python/3.12/venv
+          - /usr/local/java/bellsoft-java24-amd64
+          - /usr/lib/jvm/java-arenadata-openjdk-24
 
 services:
-  myapp:
-    runtimes:
-      java:
-        version: "24"
-        override_path: /custom/myapp/jdk24
-        env_var: MYAPP_JAVA_HOME
-
-      python:
-        version: "3.12"
-        override_path: ~/projects/myapp/venv
-        env_var: MYAPP_PY_VENV
-
-  trino:
+  TRINO:
       path: /etc/trino/conf/trino-java.yaml
-
+  FLINK2:
+      path: /etc/flink2/conf/flink2-java.yaml
+  OZONE:
+      path: /etc/ozone/conf/ozone-java.yaml
