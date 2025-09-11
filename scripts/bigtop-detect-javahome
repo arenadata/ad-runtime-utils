@@ -19,6 +19,8 @@ if [ -z "$JAVA_HOME" ]; then
   # if we got back an export line, eval it in this shell
   if [ -n "$EXPORT_CMD" ]; then
     eval "$EXPORT_CMD"
-    echo "Using detected JAVA_HOME: $JAVA_HOME"
+    if [ -n "$AD_UTILS_DEBUG" ]; then
+      echo "Using detected JAVA_HOME: $JAVA_HOME"
+    fi
   fi
 fi
