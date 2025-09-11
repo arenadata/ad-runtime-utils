@@ -26,6 +26,7 @@ func Run(args []string, stdout, stderr io.Writer) int {
 	runtime := fs.String("runtime", "", "Runtime to detect (java, python, etc.)")
 	listAll := fs.Bool("list", false, "List all detected runtimes (default + services)")
 	fs.BoolVar(listAll, "l", false, "shorthand for --list")
+	printCACerts := fs.Bool("print-cacerts", false, "When used with --runtime=java, prints the cacerts path and exits")
 
 	if err := fs.Parse(args); err != nil {
 		return exitParseError
@@ -45,6 +46,27 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "Error: --runtime is required")
 		fs.Usage()
 		return exitUserError
+	}
+
+	if *printCACerts {
+		if strings.ToLower(*runtime) != "java" {
+			fmt.Fprintln(stderr, "--print-cacerts is only valid with --runtime=java")
+			return exitUserError
+		}
+		var javaHome string
+		javaHome, err = detect.ResolveRuntime(cfg, *service, "java")
+		if err != nil {
+			fmt.Fprintf(stderr, "detection failed: %v\n", err)
+			return exitUserError
+		}
+		var cacerts string
+		cacerts, err = detect.FindCACerts(javaHome, nil)
+		if err != nil {
+			fmt.Fprintf(stderr, "cacerts: %v\n", err)
+			return exitUserError
+		}
+		fmt.Fprintln(stdout, cacerts)
+		return exitOK
 	}
 
 	path, err := detect.ResolveRuntime(cfg, *service, *runtime) // TODO add detectEnvName
