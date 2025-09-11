@@ -1,37 +1,22 @@
 #!/usr/bin/env bash
 
-# Ensure that JAVA_HOME has already been found
 if [ -z "$JAVA_HOME" ]; then
-    echo "JAVA_HOME must be set before calling bigtop-detect-javalibs"
-    exit 1
+  echo "JAVA_HOME must be set before calling bigtop-detect-cacerts" >&2
+  exit 1
 fi
 
-# Check the known external path first
-known_external_cacerts_path="/etc/pki/ca-trust/extracted/java/cacerts"
-if [ -f "$known_external_cacerts_path" ]; then
-    cacerts_path=$known_external_cacerts_path
-else
-    # Use find to search for cacerts file under JAVA_HOME and follow symbolic links
-    cacerts_path=$(find "${JAVA_HOME}" -type l -name cacerts -exec readlink -f {} \; 2>/dev/null)
-    # If not found as a symbolic link, try to find it as a regular file
-    if [ -z "$cacerts_path" ]; then
-        cacerts_path=$(find "${JAVA_HOME}" -type f -name cacerts 2>/dev/null)
-    fi
+cacerts_path=$(
+  /usr/lib/ad-runtime-utils/bin/ad-runtime-utils \
+    --config "/etc/ad-runtime-utils/adh-runtime-configuration.yaml" \
+    --service "${ADH_SERVICE_NAME:-}" \
+    --runtime java \
+    --print-cacerts 2>&1
+)
+ret=$?
 
-    # Lastly, check the common locations directly if still not found
-    if [ -z "$cacerts_path" ]; then
-        if [ -L "${JAVA_HOME}/lib/security/cacerts" ]; then
-            cacerts_path=$(readlink -f "${JAVA_HOME}/lib/security/cacerts")
-        elif [ -L "${JAVA_HOME}/jre/lib/security/cacerts" ]; then
-            cacerts_path=$(readlink -f "${JAVA_HOME}/jre/lib/security/cacerts")
-        fi
-    fi
+if [ $ret -ne 0 ]; then
+  echo "Error detecting cacerts: $cacerts_path" >&2
+  exit $ret
 fi
 
-# Check if cacerts_path is not empty
-if [ -n "$cacerts_path" ] && [ -f "$cacerts_path" ]; then
-    echo "$cacerts_path"
-else
-    echo "Unable to find cacerts in JDK at ${JAVA_HOME}"
-    exit 1
-fi
+echo "$cacerts_path"
