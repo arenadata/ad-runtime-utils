@@ -57,14 +57,7 @@ func tryEnvVar(cfg config.RuntimeSetting, exe string) (string, bool) {
 func tryPaths(cfg config.RuntimeSetting, exe string) (string, bool) {
 	for _, pat := range cfg.Paths {
 		base := expandPath(pat)
-
-		var globPattern string
-		if strings.ContainsAny(base, "*?[") {
-			globPattern = base
-		} else {
-			globPattern = base + "*"
-		}
-		cands, _ := filepath.Glob(globPattern)
+		cands, _ := filepath.Glob(base)
 		sort.Sort(sort.Reverse(sort.StringSlice(cands)))
 		for _, cand := range cands {
 			if fs.ExistsInBin(cand, exe) {
