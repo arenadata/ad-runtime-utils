@@ -7,7 +7,7 @@ fi
 
 cacerts_path=$(
   /usr/lib/ad-runtime-utils/bin/ad-runtime-utils \
-    --config "/etc/ad-runtime-utils/adh-runtime-configuration.yaml" \
+    --config "/etc/ad-runtime-utils/config.yaml" \
     --service "${ADH_SERVICE_NAME:-}" \
     --runtime java \
     --print-cacerts 2>&1
