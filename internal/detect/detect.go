@@ -7,8 +7,23 @@ import (
 	"strings"
 
 	"github.com/arenadata/ad-runtime-utils/internal/config"
-	"github.com/arenadata/ad-runtime-utils/internal/fs"
 )
+
+func hasGlobMeta(s string) bool {
+	return strings.ContainsAny(s, "*?[")
+}
+
+func checkCandidate(cand, exe string) (string, bool) {
+	resolved, evalErr := filepath.EvalSymlinks(cand)
+	if evalErr != nil || resolved == "" {
+		resolved = cand
+	}
+	candidateExe := filepath.Join(resolved, "bin", exe)
+	if _, statErr := os.Stat(candidateExe); statErr == nil {
+		return resolved, true
+	}
+	return "", false
+}
 
 // expandPath expands a leading '~' to the user home directory and
 // replaces any environment variables in the path.
@@ -57,11 +72,31 @@ func tryEnvVar(cfg config.RuntimeSetting, exe string) (string, bool) {
 func tryPaths(cfg config.RuntimeSetting, exe string) (string, bool) {
 	for _, pat := range cfg.Paths {
 		base := expandPath(pat)
-		cands, _ := filepath.Glob(base)
+
+		if hasGlobMeta(base) {
+			cands, _ := filepath.Glob(base)
+			sort.Sort(sort.Reverse(sort.StringSlice(cands)))
+			for _, cand := range cands {
+				if p, ok := checkCandidate(cand, exe); ok {
+					return p, true
+				}
+			}
+			continue
+		}
+
+		if _, statErr := os.Stat(base); statErr == nil {
+			if p, ok := checkCandidate(base, exe); ok {
+				return p, true
+			}
+			continue
+		}
+
+		globPat := base + "*"
+		cands, _ := filepath.Glob(globPat)
 		sort.Sort(sort.Reverse(sort.StringSlice(cands)))
 		for _, cand := range cands {
-			if fs.ExistsInBin(cand, exe) {
-				return cand, true
+			if p, ok := checkCandidate(cand, exe); ok {
+				return p, true
 			}
 		}
 	}
