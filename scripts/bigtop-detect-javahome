@@ -1,8 +1,28 @@
 #!/usr/bin/env bash
+#
+# Wrapper for ad-runtime-utils that detects JAVA_HOME.
+# Safe to be sourced (will return on error instead of exiting the shell).
 
-# only run if JAVA_HOME is unset
+# Detect if this script is being sourced instead of executed.
+_is_sourced() {
+  # In bash, sourced if BASH_SOURCE[0] != $0
+  [[ "${BASH_SOURCE[0]}" != "$0" ]]
+}
+
+# Unified error handler: print an error message, then either return (if sourced)
+# or exit (if executed as a normal script).
+_die() {
+  echo "Error running ad-runtime-utils: $*" >&2
+  if _is_sourced; then
+    return 1
+  else
+    exit 1
+  fi
+}
+
+# Only run detection if JAVA_HOME is not already set
 if [ -z "$JAVA_HOME" ]; then
-  # run the detector, capture both stdout and stderr
+  # Run the detector and capture both stdout and stderr
   EXPORT_CMD=$(
     /usr/lib/ad-runtime-utils/bin/ad-runtime-utils \
       --config "/etc/ad-runtime-utils/config.yaml" \
@@ -10,15 +30,28 @@ if [ -z "$JAVA_HOME" ]; then
       --runtime java 2>&1
   )
   RET=$?
+
+  # If the binary failed, print the message and stop (return or exit)
   if [ $RET -ne 0 ]; then
-    # on error, print the message and exit with the same code
-    echo "Error running ad-runtime-utils: $EXPORT_CMD" >&2
-    exit $RET
+    _die "$EXPORT_CMD"
+    return 1 2>/dev/null || exit 1
   fi
 
-  # if we got back an export line, eval it in this shell
+  # If we got something back, validate and evaluate it
   if [ -n "$EXPORT_CMD" ]; then
+    # Safety check: only accept an "export JAVA_HOME=..." line
+    case "$EXPORT_CMD" in
+      export\ JAVA_HOME=*) : ;;  # OK
+      *)
+        _die "unexpected output: $EXPORT_CMD"
+        return 1 2>/dev/null || exit 1
+        ;;
+    esac
+
+    # Evaluate the export in the current shell
     eval "$EXPORT_CMD"
+
+    # Optional debug output
     if [ -n "$AD_UTILS_DEBUG" ]; then
       echo "Using detected JAVA_HOME: $JAVA_HOME"
     fi

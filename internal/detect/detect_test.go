@@ -148,3 +148,118 @@ func TestDetectPath_Order(t *testing.T) {
 		t.Errorf("detectPath empty = (%q, %v), want ('', false)", got, ok)
 	}
 }
+func TestTryPaths_ExactSymlinkResolves(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping in short mode")
+	}
+	tmp := t.TempDir()
+	target := createRuntimeDir(t, tmp, "jdk-real", "java")
+
+	altsDir := filepath.Join(tmp, "alternatives")
+	if err := os.MkdirAll(altsDir, 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	link := filepath.Join(altsDir, "jre")
+	if err := os.Symlink(target, link); err != nil {
+		t.Fatalf("symlink: %v", err)
+	}
+
+	rt := config.RuntimeSetting{Paths: []string{link}}
+	got, ok := tryPaths(rt, "java")
+	if !ok {
+		t.Fatalf("tryPaths symlink failed")
+	}
+	if got != target {
+		t.Errorf("got %q, want symlink target %q", got, target)
+	}
+}
+
+func TestTryPaths_ExactExistsButInvalid_NoGlobFallback(t *testing.T) {
+	tmp := t.TempDir()
+	exact := filepath.Join(tmp, "java-1.8.0")
+	if err := os.MkdirAll(exact, 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	valid := createRuntimeDir(t, tmp, "java-1.8.0-openjdk-1.8.0.412", "java")
+
+	rt := config.RuntimeSetting{Paths: []string{exact}}
+	if p, ok := tryPaths(rt, "java"); ok || p != "" {
+		t.Errorf("expected no detection, got (%q, %v) with valid sibling %q", p, ok, valid)
+	}
+}
+
+func TestTryPaths_PrefixWhenBaseNotExists_GlobsAndFinds(t *testing.T) {
+	tmp := t.TempDir()
+	prefix := filepath.Join(tmp, "jdk-17")
+	_ = os.RemoveAll(prefix)
+
+	_ = createRuntimeDir(t, tmp, "jdk-17.0.8", "java")
+	_ = createRuntimeDir(t, tmp, "jdk-17.0.7", "java")
+
+	rt := config.RuntimeSetting{Paths: []string{prefix}}
+	got, ok := tryPaths(rt, "java")
+	if !ok {
+		t.Fatalf("expected detection via prefix glob")
+	}
+
+	cands, _ := filepath.Glob(prefix + "*")
+	sort.Sort(sort.Reverse(sort.StringSlice(cands)))
+	want := cands[0]
+	if got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestTryPaths_GlobPatternKeptVerbatim(t *testing.T) {
+	tmp := t.TempDir()
+	_ = createRuntimeDir(t, tmp, "liberica-jre-17.0.9+9", "java")
+	_ = createRuntimeDir(t, tmp, "liberica-jre-17.0.8+8", "java")
+
+	pattern := filepath.Join(tmp, "liberica-jre-17*")
+	rt := config.RuntimeSetting{Paths: []string{pattern}}
+
+	got, ok := tryPaths(rt, "java")
+	if !ok {
+		t.Fatalf("glob pattern failed")
+	}
+	cands, _ := filepath.Glob(pattern)
+	sort.Sort(sort.Reverse(sort.StringSlice(cands)))
+	if got != cands[0] {
+		t.Errorf("got %q, want top %q", got, cands[0])
+	}
+}
+
+func TestTryPaths_SymlinkGlob(t *testing.T) {
+	tmp := t.TempDir()
+	target := createRuntimeDir(t, tmp, "jdk-real-21", "java")
+	link := filepath.Join(tmp, "jre-21") // имя под паттерн
+	if err := os.Symlink(target, link); err != nil {
+		t.Fatalf("symlink: %v", err)
+	}
+
+	pattern := filepath.Join(tmp, "jre-21*")
+	rt := config.RuntimeSetting{Paths: []string{pattern}}
+
+	got, ok := tryPaths(rt, "java")
+	if !ok {
+		t.Fatalf("symlink via glob failed")
+	}
+	if got != target {
+		t.Errorf("got %q, want resolved %q", got, target)
+	}
+}
+
+func TestTryPaths_NoBinSkip(t *testing.T) {
+	tmp := t.TempDir()
+	bad := filepath.Join(tmp, "jdk-23.0.0")
+	if err := os.MkdirAll(bad, 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	good := createRuntimeDir(t, tmp, "jdk-23.0.1", "java")
+
+	rt := config.RuntimeSetting{Paths: []string{filepath.Join(tmp, "jdk-23*")}}
+	got, ok := tryPaths(rt, "java")
+	if !ok || got != good {
+		t.Errorf("got (%q,%v), want (%q,true)", got, ok, good)
+	}
+}

@@ -19,6 +19,7 @@ autodetect:
           - /usr/lib/jvm/java-1.8.0
           - /usr/lib/jvm/java-1.8.0-oracle
           - /usr/lib/jvm/bellsoft-java8-amd64
+          - /usr/lib/jvm/jre
           - /usr/lib/jvm/java-arenadata-openjdk-8
 
       "17":
