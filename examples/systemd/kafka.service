@@ -1,0 +1,10 @@
+[Unit]
+Description=Test Sleep
+
+[Service]
+Type=notify
+ExecStart=bin/ad-runtime-utils --config configs/config.yaml --service kafka --runtime java --start --supervise
+TimeoutStartSec=120
+
+[Install]
+WantedBy=multi-user.target
