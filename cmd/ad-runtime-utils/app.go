@@ -4,10 +4,13 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
 	"github.com/arenadata/ad-runtime-utils/internal/config"
 	"github.com/arenadata/ad-runtime-utils/internal/detect"
+	"github.com/arenadata/ad-runtime-utils/internal/exec"
+	"github.com/coreos/go-systemd/v22/daemon"
 )
 
 // exit codes.
@@ -27,6 +30,8 @@ func Run(args []string, stdout, stderr io.Writer) int {
 	listAll := fs.Bool("list", false, "List all detected runtimes (default + services)")
 	fs.BoolVar(listAll, "l", false, "shorthand for --list")
 	printCACerts := fs.Bool("print-cacerts", false, "When used with --runtime=java, prints the cacerts path and exits")
+	start := fs.Bool("start", false, "Start the service. Use with simple/exec services")
+	supervise := fs.Bool("supervise", false, "Supervise the service. Use with notify systemd services")
 
 	if err := fs.Parse(args); err != nil {
 		return exitParseError
@@ -76,6 +81,15 @@ func Run(args []string, stdout, stderr io.Writer) int {
 	}
 
 	envName := detectEnvName(cfg, *service, *runtime)
+
+	if *start {
+		if err = startService(*service, envName, path, *cfg, *supervise); err != nil {
+			fmt.Fprintf(stderr, "start service failed: %v\n", err)
+			return exitUserError
+		}
+		return exitOK
+	}
+
 	fmt.Fprintf(stdout, "export %s=%s\n", envName, path)
 	return exitOK
 }
@@ -123,4 +137,53 @@ func runList(cfg *config.Config, stdout, stderr io.Writer) int {
 		}
 	}
 	return exitOK
+}
+
+func startService(service string, envName string, envPath string, cfg config.Config, supervise bool) error {
+	srvConfig, ok := cfg.Services[service]
+	if !ok {
+		return fmt.Errorf("service %s not found in config", service)
+	}
+	// Append the env for the runtime (eg. JAVA_HOME)
+	if srvConfig.EnvVars == nil {
+		srvConfig.EnvVars = make(map[string]string)
+	}
+	srvConfig.EnvVars[envName] = envPath
+	if !supervise {
+		return exec.RunExecutable(srvConfig.Executable, srvConfig.ExecutableArgs, srvConfig.EnvVars)
+	}
+	process, err := exec.RunExecutableAsync(srvConfig.Executable, srvConfig.ExecutableArgs, srvConfig.EnvVars)
+	if err != nil {
+		return err
+	}
+	// Run the health checks
+	for _, checkCfg := range srvConfig.HealthChecks {
+		switch checkCfg.Type {
+		case exec.PortHealthCheckType:
+			portheck := exec.PortHealthCheck{
+				PID:    process.Process.Pid,
+				Config: checkCfg,
+			}
+			if err = portheck.Check(); err != nil {
+				if err = process.Process.Signal(os.Interrupt); err != nil {
+					return fmt.Errorf("failed to send interrupt signal to process: %w", err)
+				}
+				return fmt.Errorf("health check failed: %w", err)
+			}
+		default:
+			if err = process.Process.Signal(os.Interrupt); err != nil {
+				return fmt.Errorf("failed to send interrupt signal to process: %w", err)
+			}
+			return fmt.Errorf("unknown health check type: %s", checkCfg.Type)
+		}
+	}
+	// Notify systemd daemon that service has started
+	if _, err = daemon.SdNotify(false, daemon.SdNotifyReady); err != nil {
+		fmt.Fprintf(os.Stderr, "systemd notification failed: %v\n", err)
+	}
+	// TODO: Replace this with an actual supervisor loop
+	if err = process.Wait(); err != nil {
+		return err
+	}
+	return nil
 }

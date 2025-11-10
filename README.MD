@@ -92,3 +92,14 @@ Service <service-name>:
   <runtime>: <path or "error: <message>">
   …
 ```
+
+### 4. Starting a Service
+
+When --start and/or --supervise flags are provided --service is a required argument.
+
+- It starts the executable `services.<service-name>.executable` with the specified arguments from `services.<service-name>.executable_args`.
+
+- If the `--supervise` flag is provided, it will run the health checks, defined in `services.<service-name>.health_checks` on service start to make sure the service is operational. If any of the checks fail the service will be stopped. `Type=notify` should be used in the systemd unit(see example in `examples/systemd` directory).
+
+- While using `--supervise` and health checks, make sure that systemd service has enough `TimeoutStartSec`. ideally should be a combined timeout of all health checks.
+

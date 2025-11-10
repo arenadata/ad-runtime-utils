@@ -1,0 +1,17 @@
+executable: bin/kafka-server-start.sh
+executable_args:
+  - config/server.properties
+runtimes:
+  java:
+    version: "21"
+health_checks:
+  - type: port
+    params:
+      port: 9092
+      timeout: 20
+      protocol: tcp
+  - type: port
+    params:
+      port: 9093
+      timeout: 20
+      protocol: tcp

@@ -1,2 +1,3 @@
 # Added by goreleaser init:
 dist/
+cmd/ad-runtime-utils/ad-runtime-utils
