@@ -110,7 +110,7 @@ func parseExternalConfig(path string) (Config, error) {
 
 	extData, err := os.ReadFile(path)
 	if err != nil {
-		if os.IsNotExist(err) {
+		if os.IsNotExist(err) || os.IsPermission(err) {
 			return cfg, nil
 		}
 		return cfg, fmt.Errorf("read service config %q: %w", path, err)
