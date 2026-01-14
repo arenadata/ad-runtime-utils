@@ -3,6 +3,7 @@ package exec
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 )
 
@@ -10,6 +11,8 @@ import (
 func RunExecutableAsync(executablePath string, args []string, envVars map[string]string) (*exec.Cmd, error) {
 	ctx := context.TODO()
 	cmd := exec.CommandContext(ctx, executablePath, args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
 	// Add environment variables to the command.
 	for k, v := range envVars {
