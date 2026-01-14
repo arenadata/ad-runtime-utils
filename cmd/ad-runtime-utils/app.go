@@ -149,6 +149,7 @@ func startService(service string, envName string, envPath string, cfg config.Con
 		srvConfig.EnvVars = make(map[string]string)
 	}
 	srvConfig.EnvVars[envName] = envPath
+	srvConfig.EnvVars["PATH"] = fmt.Sprintf("%s/bin:%s", envPath, os.Getenv("PATH"))
 	if !supervise {
 		return exec.RunExecutable(srvConfig.Executable, srvConfig.ExecutableArgs, srvConfig.EnvVars)
 	}
