@@ -19,6 +19,7 @@ func checkCandidate(cand, exe string) (string, bool) {
 		resolved = cand
 	}
 	candidateExe := filepath.Join(resolved, "bin", exe)
+	// #nosec G703 -- Runtime homes intentionally come from config/env; this only probes bin/exe existence.
 	if _, statErr := os.Stat(candidateExe); statErr == nil {
 		return resolved, true
 	}
@@ -62,7 +63,7 @@ func tryEnvVar(cfg config.RuntimeSetting, exe string) (string, bool) {
 	}
 	p := expandPath(raw)
 
-	if _, err := os.Stat(filepath.Join(p, "bin", exe)); err == nil {
+	if _, ok := checkCandidate(p, exe); ok {
 		return p, true
 	}
 	return "", false

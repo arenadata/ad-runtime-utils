@@ -18,6 +18,8 @@ const (
 	exitOK         = 0
 	exitUserError  = 1
 	exitParseError = 2
+	runtimeJava    = "java"
+	runtimePython  = "python"
 )
 
 func Run(args []string, stdout, stderr io.Writer) int {
@@ -54,12 +56,12 @@ func Run(args []string, stdout, stderr io.Writer) int {
 	}
 
 	if *printCACerts {
-		if strings.ToLower(*runtime) != "java" {
+		if strings.ToLower(*runtime) != runtimeJava {
 			fmt.Fprintln(stderr, "--print-cacerts is only valid with --runtime=java")
 			return exitUserError
 		}
 		var javaHome string
-		javaHome, err = detect.ResolveRuntime(cfg, *service, "java")
+		javaHome, err = detect.ResolveRuntime(cfg, *service, runtimeJava)
 		if err != nil {
 			fmt.Fprintf(stderr, "detection failed: %v\n", err)
 			return exitUserError
@@ -106,9 +108,9 @@ func detectEnvName(cfg *config.Config, service, runtime string) string {
 		return def.EnvVar
 	}
 	switch strings.ToLower(runtime) {
-	case "java":
+	case runtimeJava:
 		return "JAVA_HOME"
-	case "python":
+	case runtimePython:
 		return "VIRTUAL_ENV"
 	default:
 		return strings.ToUpper(runtime) + "_HOME"
