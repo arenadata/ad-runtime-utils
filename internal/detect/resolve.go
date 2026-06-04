@@ -6,12 +6,17 @@ import (
 	"github.com/arenadata/ad-runtime-utils/internal/config"
 )
 
+const (
+	runtimeJava   = "java"
+	runtimePython = "python"
+)
+
 func exeName(rt string) string {
 	switch rt {
-	case "java":
-		return "java"
-	case "python":
-		return "python"
+	case runtimeJava:
+		return runtimeJava
+	case runtimePython:
+		return runtimePython
 	default:
 		return rt
 	}
