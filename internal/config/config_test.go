@@ -135,6 +135,46 @@ services:
 	}
 }
 
+func TestLoad_ServiceExternalPermissionDenied(t *testing.T) {
+	tmpDir := t.TempDir()
+	extFile := filepath.Join(tmpDir, "restricted.yaml")
+	if err := os.WriteFile(extFile, []byte(`
+runtimes:
+  java:
+    version: "11"
+`), 0o644); err != nil {
+		t.Fatalf("write restricted external config: %v", err)
+	}
+	if err := os.Chmod(extFile, 0); err != nil {
+		t.Fatalf("restrict external config permissions: %v", err)
+	}
+	defer func() {
+		if err := os.Chmod(extFile, 0o644); err != nil {
+			t.Logf("restore external config permissions: %v", err)
+		}
+	}()
+	if _, err := os.ReadFile(extFile); err == nil {
+		t.Skip("external config remains readable after permission restriction")
+	} else if !os.IsPermission(err) {
+		t.Fatalf("expected permission error reading external config, got: %v", err)
+	}
+
+	mainContent := []byte(`
+services:
+  foo:
+    path: "` + extFile + `"
+`)
+	mainFile := filepath.Join(tmpDir, "cfg.yaml")
+	if err := os.WriteFile(mainFile, mainContent, 0o644); err != nil {
+		t.Fatalf("write main config: %v", err)
+	}
+
+	_, err := Load(mainFile)
+	if err != nil {
+		t.Fatalf("Load() returned error for permission denied external service config: %v", err)
+	}
+}
+
 func TestLoad_ServiceExternalParseError(t *testing.T) {
 	tmpDir := t.TempDir()
 	extFile := filepath.Join(tmpDir, "bad.yaml")
